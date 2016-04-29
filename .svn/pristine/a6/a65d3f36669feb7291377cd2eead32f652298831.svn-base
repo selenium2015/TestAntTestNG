@@ -1,0 +1,54 @@
+<project name= "TestAntTestNG" default="transform" basedir= "." >
+	<property name="lib.dir" value="lib" />
+	<property name="resources.dir" value="resources"/>
+	
+    <path id="run.classpath">
+        <fileset dir="${lib.dir}">
+            <include name="*.jar" />
+        </fileset>
+    </path>
+	
+	<!-- 调用testng 可参考：http://testng.org/doc/ant.html -->
+	<taskdef resource="testngtasks" classpath="${lib.dir}/testng-6.8.5.jar" />
+	
+    <target name="clean">
+        <delete dir="bin"/>
+    	<delete dir="${basedir}/test-output" />
+    </target>
+	
+    <target name="compile" depends="clean">
+        <mkdir dir="${basedir}/bin"/>
+        <javac srcdir="src" destdir="${basedir}/bin"  encoding="UTF-8" includeantruntime="on" debug="on" debuglevel="lines,vars,source" >
+            <classpath refid="run.classpath"/>
+        </javac>
+    </target>
+	
+    <path id="runpath"> 
+         <path refid="run.classpath"/> 
+         <pathelement location="${basedir}/bin"/> 
+    </path> 
+	
+	<!-- 调用testng.xml来执行testng用例 -->
+    <target name="run" depends="compile">
+        <testng  classpathref="runpath"  outputDir="test-output">
+            <xmlfileset dir="${basedir}/src/com/test" includes="testng.xml"/>
+            <jvmarg value="-ea" />
+        </testng>
+    </target>
+	
+	<target name="copy" depends="run" description="复制testng-results.xml至test-output文件夹">
+		<copy todir="${basedir}/test-output">
+			<fileset file="${resources.dir}/testng-results.xsl" />
+			<fileset file="${resources.dir}/testng-results.xml" />
+		</copy>
+	</target>
+
+	<!-- 转换成testng-xlst格式的测试报告 -->
+    <target name= "transform" depends="copy">
+        <xslt in= "${basedir}/test-output/testng-results.xml" style= "${basedir}/test-output/testng-results.xsl" out= "${basedir}/test-output/index_TestNG-XSLT.html " >
+             <!-- you need to specify the directory here again --> 
+            <param name= "testNgXslt.outputDir" expression= "${basedir}/test-output/" /> 
+            <classpath refid= "run.classpath" /> 
+        </xslt> 
+    </target> 
+</project> 
